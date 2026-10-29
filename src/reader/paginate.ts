@@ -26,35 +26,38 @@ export function parseBlocos(md: string): Bloco[] {
   return out
 }
 
-// shortcut: altura estimada por contagem de caracteres (fonte serifada ~média), não medida no DOM; medir se o layout divergir
-const linhas = (b: Bloco, cpl: number) => Math.max(1, Math.ceil(b.texto.length / cpl)) * (b.tipo === 'h' ? 2 : 1)
-const ESPACO = 1
+// cabe: mede se a Página (blocos em sequência) cabe na área de leitura; no app vem do DOM (Reader), nos testes é falsa
+export type Cabe = (pagina: Pagina) => boolean
 
-export function paginate(blocos: Bloco[], linhasPorPagina: number, cpl: number): Pagina[] {
+export function paginate(blocos: Bloco[], cabe: Cabe): Pagina[] {
   const paginas: Pagina[] = []
   let atual: Pagina = []
-  let usado = 0
-  const nova = () => { if (atual.length) paginas.push(atual); atual = []; usado = 0 }
+  const nova = () => { if (atual.length) paginas.push(atual); atual = [] }
 
   for (let b of blocos) {
     if (b.tipo === 'h' && b.nivel === 1) nova()
-    for (;;) {
-      const custo = linhas(b, cpl) + ESPACO
-      if (usado + custo <= linhasPorPagina || (atual.length === 0 && (b.tipo === 'h' || custo <= 2))) break
-      // bloco não cabe: divide por palavras o que couber; títulos não se dividem, vão para a próxima Página
-      const livre = linhasPorPagina - usado - ESPACO
-      if (b.tipo === 'h' || livre < 1) { nova(); continue }
+    while (!cabe([...atual, b])) {
       const palavras = b.texto.split(' ')
-      let n = palavras.length
-      while (n > 1 && palavras.slice(0, n).join(' ').length > livre * cpl) n--
-      if (n === palavras.length) { if (!atual.length) break; nova(); continue } // Página vazia: não há onde caber melhor, entra e o overflow corta
-      atual.push({ ...b, texto: palavras.slice(0, n).join(' ') })
-      nova()
-      // shortcut: em parágrafo de várias linhas o deslocamento do resto deriva alguns caracteres (quebras/espaços); medir no texto-fonte se importar
-      b = { ...b, texto: palavras.slice(n).join(' '), ini: b.ini + palavras.slice(0, n).join(' ').length + 1 }
+      // títulos não se dividem; parágrafo longo é dividido na maior quantidade de palavras que cabe
+      let n = 0
+      if (b.tipo !== 'h' && palavras.length > 1) {
+        let lo = 1, hi = palavras.length - 1
+        while (lo <= hi) {
+          const m = (lo + hi) >> 1
+          if (cabe([...atual, { ...b, texto: palavras.slice(0, m).join(' ') }])) { n = m; lo = m + 1 } else hi = m - 1
+        }
+        // nem uma palavra cabe: com a Página vazia, tira só a primeira (overflow inevitável), senão vai para a próxima Página
+        if (!n && !atual.length) n = 1
+      }
+      if (n) {
+        const ini = b.ini + palavras.slice(0, n).join(' ').length + 1
+        atual.push({ ...b, texto: palavras.slice(0, n).join(' ') })
+        nova()
+        b = { ...b, texto: palavras.slice(n).join(' '), ini }
+      } else if (atual.length) nova()
+      else break // um único bloco que não cabe nem sozinho: aceita o overflow
     }
     atual.push(b)
-    usado += linhas(b, cpl) + ESPACO
   }
   nova()
   return paginas

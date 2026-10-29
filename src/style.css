@@ -16,8 +16,8 @@ ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(
 .pagina h1, .pagina h2, .pagina h3 { font-size: 1.4em; line-height: 28px; }
 .pagina blockquote { padding-left: 16px; border-left: 3px solid #ccc; font-style: italic; }
 .pagina ul { padding-left: 24px; }
-/* mede a área útil de uma Página (a mesma de .pagina menos o padding) */
-.medida { position: absolute; top: 32px; bottom: 32px; right: 40px; width: calc(50% - 80px); visibility: hidden; pointer-events: none; }
+/* mede a área útil de uma Página (a mesma de .pagina menos o padding); o conteúdo vem do Reader */
+.medida { padding: 0; position: absolute; top: 32px; bottom: 32px; right: 40px; width: calc(50% - 80px); visibility: hidden; pointer-events: none; }
 /* Virada: folha 3D girando em torno da lombada */
 .livro { perspective: 2400px; }
 .folha { position: absolute; top: 0; bottom: 0; width: 50%; transform-style: preserve-3d; pointer-events: none; animation: 600ms ease-in-out forwards; }
@@ -30,3 +30,5 @@ ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(
 @keyframes avanca { to { transform: rotateY(-180deg); } }
 @keyframes volta { to { transform: rotateY(180deg); } }
 @keyframes sombra { 50% { opacity: 1; } }
+.medida > :last-child { margin-bottom: 0; }
+.pagina { overflow-wrap: anywhere; }

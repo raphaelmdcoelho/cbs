@@ -82,3 +82,46 @@ test('com prefers-reduced-motion a troca é direta', async ({ page }) => {
   await expect(page.getByTestId('pagina-dir')).not.toContainText('Longo')
   await expect(page.getByTestId('folha')).toHaveCount(0)
 })
+
+test('a paginação mede o DOM: nenhuma palavra fica cortada por overflow', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const palavras: string[] = []
+  const w = (p: string, i: number) => { const x = `${p}${i}`; palavras.push(x); return x }
+  const partes = ['# Cap um']
+  for (let c = 0; c < 4; c++) {
+    if (c) partes.push(`# Cap ${c}x`)
+    partes.push(`## ${w('sub', c)}`)
+    for (let i = 0; i < 6; i++) {
+      partes.push(Array.from({ length: 120 }, (_, j) => w(`p${c}_${i}_`, j)).join(' ') + ' ' + w('G', c * 10 + i) + 'x'.repeat(70))
+      partes.push(Array.from({ length: 5 }, (_, j) => `- ${w(`li${c}_${i}_`, j)} item`).join('\n'))
+    }
+  }
+  palavras.forEach((p, i) => { if (p.startsWith('G')) palavras[i] = p + 'x'.repeat(70) })
+  await page.goto('/')
+  await page.getByTestId('arquivo').setInputFiles({ name: 'l.md', mimeType: 'text/markdown', buffer: Buffer.from(partes.join('\n\n')) })
+  await page.locator('.cartao').first().click()
+  const livro = page.getByTestId('livro')
+  await expect(page.getByTestId('pagina-dir')).toContainText('Cap um')
+  const visto = new Set<string>()
+  // innerText inclui texto cortado por overflow; por isso confere também que o último bloco de cada Página termina dentro dela
+  const coleta = async () => {
+    (await livro.innerText()).split(/\s+/).forEach((t) => visto.add(t))
+    for (const id of ['pagina-esq', 'pagina-dir']) {
+      const cortado = await page.getByTestId(id).evaluate((el) => {
+        const u = el.lastElementChild
+        return !!u && u.getBoundingClientRect().bottom > el.getBoundingClientRect().bottom + 0.5
+      })
+      expect(cortado, id).toBe(false)
+    }
+  }
+  let antes = ''
+  for (let i = 0; i < 200; i++) {
+    await coleta()
+    await page.keyboard.press('ArrowRight')
+    const depois = await livro.innerText()
+    if (depois === antes) break
+    antes = depois
+  }
+  await coleta()
+  expect(palavras.filter((p) => !visto.has(p))).toEqual([])
+})

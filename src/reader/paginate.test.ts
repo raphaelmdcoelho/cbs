@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pares, paginate, parseBlocos, parDaPosicao, posicaoDoPar } from './paginate'
+import { pares, paginate, type Cabe, parseBlocos, parDaPosicao, posicaoDoPar } from './paginate'
 
 describe('parseBlocos', () => {
   it('reconhece títulos, parágrafos, listas e citações', () => {
@@ -13,25 +13,34 @@ describe('parseBlocos', () => {
   })
 })
 
+// medida falsa: cada bloco ocupa ceil(chars / cpl) linhas (título dobra) + 1 de espaço; cabe se o total ≤ linhas
+const medida = (linhas: number, cpl: number): Cabe => (pagina) =>
+  pagina.reduce((s, b) => s + Math.max(1, Math.ceil(b.texto.length / cpl)) * (b.tipo === 'h' ? 2 : 1) + 1, 0) <= linhas
+
 describe('paginate', () => {
   it('cada Capítulo começa em Página nova', () => {
-    const p = paginate(parseBlocos('# A\ntexto\n\n# B\ntexto'), 20, 40)
+    const p = paginate(parseBlocos('# A\ntexto\n\n# B\ntexto'), medida(20, 40))
     expect(p).toHaveLength(2)
     expect(p[1][0]).toMatchObject({ tipo: 'h', texto: 'B' })
   })
   it('não trava com uma palavra maior que uma Página', () => {
-    const p = paginate(parseBlocos('x'.repeat(100)), 3, 10)
+    const p = paginate(parseBlocos('x'.repeat(100)), medida(3, 10))
     expect(p.flat().map((b) => b.texto).join('')).toBe('x'.repeat(100))
+  })
+  it('palavra gigante no começo do parágrafo não perde as outras palavras', () => {
+    const texto = 'x'.repeat(100) + ' ' + Array(20).fill('ok').join(' ')
+    const p = paginate(parseBlocos(texto), medida(4, 10))
+    expect(p.flat().map((b) => b.texto).join(' ')).toBe(texto)
   })
   it('divide parágrafo longo entre Páginas sem perder texto', () => {
     const texto = Array(200).fill('palavra').join(' ')
-    const p = paginate(parseBlocos(texto), 10, 30)
+    const p = paginate(parseBlocos(texto), medida(10, 30))
     expect(p.length).toBeGreaterThan(1)
     expect(p.flat().map((b) => b.texto).join(' ')).toBe(texto)
   })
   it('Página menor gera mais Páginas', () => {
     const md = Array(30).fill('um parágrafo qualquer de texto').join('\n\n')
-    expect(paginate(parseBlocos(md), 8, 30).length).toBeGreaterThan(paginate(parseBlocos(md), 30, 30).length)
+    expect(paginate(parseBlocos(md), medida(8, 30)).length).toBeGreaterThan(paginate(parseBlocos(md), medida(30, 30)).length)
   })
 })
 
@@ -47,7 +56,7 @@ describe('pares', () => {
 
 describe('Posição de leitura', () => {
   const md = '# T\n\n' + Array.from({ length: 80 }, (_, i) => `Parágrafo ${i} com algum texto de enchimento.`).join('\n\n')
-  const monta = (linhas: number, cpl: number) => pares(paginate(parseBlocos(md), linhas, cpl))
+  const monta = (linhas: number, cpl: number) => pares(paginate(parseBlocos(md), medida(linhas, cpl)))
 
   it('cada bloco aponta para o seu trecho no texto-fonte', () => {
     for (const b of parseBlocos(md)) expect(md.slice(b.ini, b.ini + b.texto.length + 8)).toContain(b.texto.slice(0, 10))

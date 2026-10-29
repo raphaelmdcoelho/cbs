@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import type { Livro } from '../library/storage'
 import { saveBook } from '../library/storage'
 import { pares, paginate, parseBlocos, parDaPosicao, posicaoDoPar, type Bloco, type Pagina } from '../reader/paginate'
 
 const LARGURA_MIN = 700
-const LINHA = 28 // px, igual ao line-height do CSS
-const CHAR = 9.5 // px por caractere, estimativa para 18px serifado
 
 const inline = (t: string): ReactNode[] =>
   t.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).map((s, i) =>
@@ -54,10 +53,17 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
   }, [estreita])
 
   const blocos = useMemo(() => parseBlocos(livro.texto), [livro.texto])
-  const todos = useMemo(() => {
-    if (!area) return []
-    const paginas = paginate(blocos, Math.max(3, Math.floor(area.h / LINHA)), Math.max(10, Math.floor(area.w / CHAR)))
-    return pares(paginas)
+  const [todos, setTodos] = useState<Par[]>([])
+  // mede de verdade: renderiza a Página candidata na .medida (mesmo CSS de .pagina) e confere se sobra altura
+  useEffect(() => {
+    const el = medida.current
+    if (!area || !el) return
+    const cabe = (p: Pagina) => {
+      el.innerHTML = renderToStaticMarkup(<Conteudo pagina={p} />)
+      return el.scrollHeight <= el.clientHeight
+    }
+    setTodos(pares(paginate(blocos, cabe)))
+    el.innerHTML = ''
   }, [blocos, area])
   // Posição de leitura: deslocamento no texto-fonte, estável entre repaginações
   const [pos, setPos] = useState(livro.posicao ?? 0)
@@ -101,7 +107,7 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
               <Face p={anim.d === 1 ? par[0] : par[1]} cls="verso" />
             </div>
           )}
-          <div className="medida" ref={medida} aria-hidden />
+          <div className="pagina medida" ref={medida} aria-hidden />
         </div>
       )}
     </main>
