@@ -1,0 +1,34 @@
+body { margin: 0; background: #faf7f0; color: #222; font-family: Georgia, 'Times New Roman', serif; }
+main { max-width: 960px; margin: 0 auto; padding: 24px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+button { font: inherit; padding: 8px 16px; cursor: pointer; }
+ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, 180px); gap: 24px; }
+.cartao h2 { font-size: 1rem; margin: 8px 0 0; }
+.cartao p { margin: 2px 0; color: #555; }
+.capa { height: 240px; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; color: #fff; text-align: center; font-size: 1.2rem; border-radius: 4px; }
+.cartao { cursor: pointer; }
+.leitor { max-width: 1100px; }
+.leitor header span { color: #555; }
+.livro { position: relative; display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 120px); margin-top: 16px; background: #fff; box-shadow: 0 2px 12px #0003; }
+.pagina { padding: 32px 40px; overflow: hidden; font-size: 18px; line-height: 28px; box-sizing: border-box; }
+.pagina.esq { border-right: 1px solid #ddd; }
+.pagina p, .pagina ul, .pagina blockquote, .pagina h1, .pagina h2, .pagina h3 { margin: 0 0 28px; }
+.pagina h1, .pagina h2, .pagina h3 { font-size: 1.4em; line-height: 28px; }
+.pagina blockquote { padding-left: 16px; border-left: 3px solid #ccc; font-style: italic; }
+.pagina ul { padding-left: 24px; }
+/* mede a área útil de uma Página (a mesma de .pagina menos o padding); o conteúdo vem do Reader */
+.medida { padding: 0; position: absolute; top: 32px; bottom: 32px; right: 40px; width: calc(50% - 80px); visibility: hidden; pointer-events: none; }
+/* Virada: folha 3D girando em torno da lombada */
+.livro { perspective: 2400px; }
+.folha { position: absolute; top: 0; bottom: 0; width: 50%; transform-style: preserve-3d; pointer-events: none; animation: 600ms ease-in-out forwards; }
+.folha.avanca { left: 50%; transform-origin: left center; animation-name: avanca; }
+.folha.volta { left: 0; transform-origin: right center; animation-name: volta; }
+.face { position: absolute; inset: 0; background: #fff; backface-visibility: hidden; }
+.face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, #0000, #0006); opacity: 0; animation: sombra 600ms ease-in-out; pointer-events: none; }
+.folha.volta .face::after { background: linear-gradient(to left, #0000, #0006); }
+.face.verso { transform: rotateY(180deg); }
+@keyframes avanca { to { transform: rotateY(-180deg); } }
+@keyframes volta { to { transform: rotateY(180deg); } }
+@keyframes sombra { 50% { opacity: 1; } }
+.medida > :last-child { margin-bottom: 0; }
+.pagina { overflow-wrap: anywhere; }
