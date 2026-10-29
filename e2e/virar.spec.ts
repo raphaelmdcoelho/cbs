@@ -48,3 +48,37 @@ test('recarregar o navegador reabre o Livro no mesmo ponto e atualiza o progress
   await page.locator('.cartao').first().click()
   await expect.poll(() => dir.innerText()).toBe(antes)
 })
+
+test('a Virada anima uma folha 3D e termina com o Par correto', async ({ page }) => {
+  await page.goto('/')
+  await page.getByTestId('arquivo').setInputFiles({ name: 'l.md', mimeType: 'text/markdown', buffer: Buffer.from(`# Longo\n\n${paragrafos}`) })
+  await page.locator('.cartao').first().click()
+  const dir = page.getByTestId('pagina-dir')
+  await expect(dir).toContainText('Longo')
+  const folha = page.getByTestId('folha')
+
+  await page.keyboard.press('ArrowRight')
+  await expect(folha).toHaveClass(/avanca/)
+  await expect(folha.locator('.frente')).toContainText('Longo') // frente: Página direita antiga
+  const t0 = Date.now()
+  await expect(folha).toHaveCount(0)
+  expect(Date.now() - t0).toBeGreaterThan(300)
+  await expect(dir).not.toContainText('Longo')
+
+  await page.keyboard.press('ArrowLeft')
+  await expect(folha).toHaveClass(/volta/)
+  await expect(folha.locator('.verso')).toContainText('Longo') // verso: Página direita do Par destino
+  await expect(folha).toHaveCount(0)
+  await expect(dir).toContainText('Longo')
+})
+
+test('com prefers-reduced-motion a troca é direta', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  await page.getByTestId('arquivo').setInputFiles({ name: 'l.md', mimeType: 'text/markdown', buffer: Buffer.from(`# Longo\n\n${paragrafos}`) })
+  await page.locator('.cartao').first().click()
+  await expect(page.getByTestId('pagina-dir')).toContainText('Longo')
+  await page.keyboard.press('ArrowRight')
+  await expect(page.getByTestId('pagina-dir')).not.toContainText('Longo')
+  await expect(page.getByTestId('folha')).toHaveCount(0)
+})

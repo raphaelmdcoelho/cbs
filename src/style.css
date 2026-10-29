@@ -18,3 +18,15 @@ ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(
 .pagina ul { padding-left: 24px; }
 /* mede a área útil de uma Página (a mesma de .pagina menos o padding) */
 .medida { position: absolute; top: 32px; bottom: 32px; right: 40px; width: calc(50% - 80px); visibility: hidden; pointer-events: none; }
+/* Virada: folha 3D girando em torno da lombada */
+.livro { perspective: 2400px; }
+.folha { position: absolute; top: 0; bottom: 0; width: 50%; transform-style: preserve-3d; pointer-events: none; animation: 600ms ease-in-out forwards; }
+.folha.avanca { left: 50%; transform-origin: left center; animation-name: avanca; }
+.folha.volta { left: 0; transform-origin: right center; animation-name: volta; }
+.face { position: absolute; inset: 0; background: #fff; backface-visibility: hidden; }
+.face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, #0000, #0006); opacity: 0; animation: sombra 600ms ease-in-out; pointer-events: none; }
+.folha.volta .face::after { background: linear-gradient(to left, #0000, #0006); }
+.face.verso { transform: rotateY(180deg); }
+@keyframes avanca { to { transform: rotateY(-180deg); } }
+@keyframes volta { to { transform: rotateY(180deg); } }
+@keyframes sombra { 50% { opacity: 1; } }

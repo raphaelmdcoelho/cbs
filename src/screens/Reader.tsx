@@ -29,6 +29,10 @@ function Conteudo({ pagina }: { pagina: Pagina }) {
   return <>{out}</>
 }
 
+type Par = [Pagina | null, Pagina | null]
+
+const Face = ({ p, cls }: { p: Pagina | null; cls: string }) => <div className={`pagina face ${cls}`}>{p && <Conteudo pagina={p} />}</div>
+
 export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void }) {
   const [largura, setLargura] = useState(window.innerWidth)
   const [area, setArea] = useState<{ w: number; h: number } | null>(null)
@@ -59,9 +63,12 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
   const [pos, setPos] = useState(livro.posicao ?? 0)
   const atual = parDaPosicao(todos, pos)
   const par = todos[atual] ?? null
+  // Animação é só visual: pos já vale o novo Par; um clique durante o giro troca a folha (sem fila, sem ignorar)
+  const [anim, setAnim] = useState<{ d: number; de: Par; id: number } | null>(null)
   const virar = (d: number) => {
     const novo = Math.max(0, Math.min(todos.length - 1, atual + d))
     if (novo === atual) return
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) setAnim({ d, de: todos[atual], id: Date.now() + Math.random() })
     const p = posicaoDoPar(todos, novo)
     setPos(p)
     const progresso = novo === todos.length - 1 ? 100 : Math.floor((p / Math.max(1, livro.texto.length)) * 100)
@@ -85,8 +92,15 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
           const r = e.currentTarget.getBoundingClientRect()
           virar(e.clientX < r.left + r.width / 2 ? -1 : 1)
         }}>
-          <div className="pagina esq" data-testid="pagina-esq">{par?.[0] && <Conteudo pagina={par[0]} />}</div>
-          <div className="pagina dir" data-testid="pagina-dir">{par?.[1] && <Conteudo pagina={par[1]} />}</div>
+          {/* durante a Virada, a página que a folha ainda cobre mostra o Par antigo */}
+          <div className="pagina esq" data-testid="pagina-esq">{(anim?.d === 1 ? anim.de[0] : par?.[0]) && <Conteudo pagina={(anim?.d === 1 ? anim.de[0] : par?.[0])!} />}</div>
+          <div className="pagina dir" data-testid="pagina-dir">{(anim?.d === -1 ? anim.de[1] : par?.[1]) && <Conteudo pagina={(anim?.d === -1 ? anim.de[1] : par?.[1])!} />}</div>
+          {anim && par && (
+            <div key={anim.id} className={`folha ${anim.d === 1 ? 'avanca' : 'volta'}`} data-testid="folha" onAnimationEnd={() => setAnim(null)}>
+              <Face p={anim.d === 1 ? anim.de[1] : anim.de[0]} cls="frente" />
+              <Face p={anim.d === 1 ? par[0] : par[1]} cls="verso" />
+            </div>
+          )}
           <div className="medida" ref={medida} aria-hidden />
         </div>
       )}
