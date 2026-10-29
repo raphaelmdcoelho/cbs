@@ -19,6 +19,10 @@ describe('paginate', () => {
     expect(p).toHaveLength(2)
     expect(p[1][0]).toMatchObject({ tipo: 'h', texto: 'B' })
   })
+  it('não trava com uma palavra maior que uma Página', () => {
+    const p = paginate(parseBlocos('x'.repeat(100)), 3, 10)
+    expect(p.flat().map((b) => b.texto).join('')).toBe('x'.repeat(100))
+  })
   it('divide parágrafo longo entre Páginas sem perder texto', () => {
     const texto = Array(200).fill('palavra').join(' ')
     const p = paginate(parseBlocos(texto), 10, 30)

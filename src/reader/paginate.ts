@@ -47,7 +47,7 @@ export function paginate(blocos: Bloco[], linhasPorPagina: number, cpl: number):
       const palavras = b.texto.split(' ')
       let n = palavras.length
       while (n > 1 && palavras.slice(0, n).join(' ').length > livre * cpl) n--
-      if (n === palavras.length) { nova(); continue }
+      if (n === palavras.length) { if (!atual.length) break; nova(); continue } // Página vazia: não há onde caber melhor, entra e o overflow corta
       atual.push({ ...b, texto: palavras.slice(0, n).join(' ') })
       nova()
       // shortcut: em parágrafo de várias linhas o deslocamento do resto deriva alguns caracteres (quebras/espaços); medir no texto-fonte se importar
