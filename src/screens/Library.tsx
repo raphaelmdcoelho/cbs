@@ -5,7 +5,7 @@ import { deleteBook, listBooks, saveBook, type Livro } from '../library/storage'
 // Cor estável derivada do título
 const capaCor = (t: string) => `hsl(${[...t].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7)} 45% 35%)`
 
-export function Library() {
+export function Library({ onAbrir }: { onAbrir: (l: Livro) => void }) {
   const [livros, setLivros] = useState<Livro[]>([])
   const [erro, setErro] = useState('')
   const input = useRef<HTMLInputElement>(null)
@@ -41,12 +41,13 @@ export function Library() {
       {livros.length === 0 && <p>Nenhum livro ainda. Clique em Importar para adicionar um arquivo .md.</p>}
       <ul>
         {livros.map((l) => (
-          <li key={l.id} className="cartao">
+          <li key={l.id} className="cartao" onClick={() => onAbrir(l)}>
             <div className="capa" style={{ background: capaCor(l.titulo) }}>{l.titulo}</div>
             <h2>{l.titulo}</h2>
             <p>{l.autor}</p>
             <p>{l.progresso}%</p>
-            <button onClick={async () => {
+            <button onClick={async (e) => {
+              e.stopPropagation()
               if (!window.confirm(`Remover "${l.titulo}"? O progresso também será apagado.`)) return
               await deleteBook(l.id)
               setLivros(await listBooks())

@@ -68,3 +68,27 @@ test('remover pede confirmação e apaga o Livro', async ({ page }) => {
   await page.reload()
   await expect(page.locator('.cartao')).toHaveCount(0)
 })
+
+test('abre o Livro: capa à direita, capítulos em Página nova, voltar e tela estreita', async ({ page }) => {
+  await page.goto('/')
+  await importar(page, 'l.md', '# Cap A\n\nTexto **forte** e *itálico*.\n\n- item\n\n> citação\n\n# Cap B\n\nOutro.')
+  await page.locator('.cartao', { hasText: 'Cap A' }).click()
+  await expect(page.getByTestId('livro')).toBeVisible()
+  await expect(page.getByTestId('pagina-esq')).toBeEmpty()
+  const dir = page.getByTestId('pagina-dir')
+  await expect(dir.getByRole('heading', { name: 'Cap A' })).toBeVisible()
+  await expect(dir.locator('strong')).toHaveText('forte')
+  await expect(dir.locator('em').first()).toHaveText('itálico')
+  await expect(dir.locator('li')).toHaveText('item')
+  await expect(dir.locator('blockquote')).toHaveText('citação')
+  await expect(dir.getByText('Cap B')).toHaveCount(0)
+  await expect(page.getByTestId('pagina-esq')).toBeEmpty()
+
+  await page.setViewportSize({ width: 600, height: 800 })
+  await expect(page.getByText('Tela estreita demais')).toBeVisible()
+  await page.setViewportSize({ width: 1200, height: 800 })
+  await expect(page.getByTestId('livro')).toBeVisible()
+
+  await page.getByRole('button', { name: /Biblioteca/ }).click()
+  await expect(page.getByRole('heading', { name: 'Biblioteca' })).toBeVisible()
+})

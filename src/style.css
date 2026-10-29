@@ -6,3 +6,15 @@ ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(
 .cartao h2 { font-size: 1rem; margin: 8px 0 0; }
 .cartao p { margin: 2px 0; color: #555; }
 .capa { height: 240px; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; color: #fff; text-align: center; font-size: 1.2rem; border-radius: 4px; }
+.cartao { cursor: pointer; }
+.leitor { max-width: 1100px; }
+.leitor header span { color: #555; }
+.livro { position: relative; display: grid; grid-template-columns: 1fr 1fr; height: calc(100vh - 120px); margin-top: 16px; background: #fff; box-shadow: 0 2px 12px #0003; }
+.pagina { padding: 32px 40px; overflow: hidden; font-size: 18px; line-height: 28px; box-sizing: border-box; }
+.pagina.esq { border-right: 1px solid #ddd; }
+.pagina p, .pagina ul, .pagina blockquote, .pagina h1, .pagina h2, .pagina h3 { margin: 0 0 28px; }
+.pagina h1, .pagina h2, .pagina h3 { font-size: 1.4em; line-height: 28px; }
+.pagina blockquote { padding-left: 16px; border-left: 3px solid #ccc; font-style: italic; }
+.pagina ul { padding-left: 24px; }
+/* mede a área útil de uma Página (a mesma de .pagina menos o padding) */
+.medida { position: absolute; top: 32px; bottom: 32px; right: 40px; width: calc(50% - 80px); visibility: hidden; pointer-events: none; }
