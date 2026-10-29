@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { pares, paginate, parseBlocos } from './paginate'
+import { pares, paginate, parseBlocos, parDaPosicao, posicaoDoPar } from './paginate'
 
 describe('parseBlocos', () => {
   it('reconhece títulos, parágrafos, listas e citações', () => {
     expect(parseBlocos('# A\nlinha 1\nlinha 2\n\n- x\n1. y\n> q')).toEqual([
-      { tipo: 'h', nivel: 1, texto: 'A' },
-      { tipo: 'p', texto: 'linha 1 linha 2' },
-      { tipo: 'li', texto: 'x' },
-      { tipo: 'li', texto: 'y' },
-      { tipo: 'q', texto: 'q' },
+      { tipo: 'h', nivel: 1, texto: 'A', ini: 0 },
+      { tipo: 'p', texto: 'linha 1 linha 2', ini: 4 },
+      { tipo: 'li', texto: 'x', ini: 21 },
+      { tipo: 'li', texto: 'y', ini: 25 },
+      { tipo: 'q', texto: 'q', ini: 30 },
     ])
   })
 })
@@ -38,5 +38,28 @@ describe('pares', () => {
   it('total ímpar deixa a direita em branco', () => {
     const r = pares(['a', 'b', 'c', 'd'] as any)
     expect(r).toEqual([[null, 'a'], ['b', 'c'], ['d', null]])
+  })
+})
+
+describe('Posição de leitura', () => {
+  const md = '# T\n\n' + Array.from({ length: 80 }, (_, i) => `Parágrafo ${i} com algum texto de enchimento.`).join('\n\n')
+  const monta = (linhas: number, cpl: number) => pares(paginate(parseBlocos(md), linhas, cpl))
+
+  it('cada bloco aponta para o seu trecho no texto-fonte', () => {
+    for (const b of parseBlocos(md)) expect(md.slice(b.ini, b.ini + b.texto.length + 8)).toContain(b.texto.slice(0, 10))
+  })
+  it('a posição mantém o trecho ao repaginar com Página de outro tamanho', () => {
+    const grande = monta(30, 60)
+    const pos = posicaoDoPar(grande, 3)
+    const pequeno = monta(10, 30)
+    const i = parDaPosicao(pequeno, pos)
+    const ini = posicaoDoPar(pequeno, i)
+    expect(ini).toBeLessThanOrEqual(pos)
+    if (i + 1 < pequeno.length) expect(posicaoDoPar(pequeno, i + 1)).toBeGreaterThan(pos)
+  })
+  it('posição 0 ou fora do texto cai nas pontas', () => {
+    const t = monta(10, 30)
+    expect(parDaPosicao(t, 0)).toBe(0)
+    expect(parDaPosicao(t, 1e9)).toBe(t.length - 1)
   })
 })

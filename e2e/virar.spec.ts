@@ -30,3 +30,21 @@ test('vira páginas por clique e setas, parando nas pontas', async ({ page }) =>
   expect(await esq.innerText()).toBe(fim)
   await expect(page.getByTestId('livro')).toContainText('número 199')
 })
+
+test('recarregar o navegador reabre o Livro no mesmo ponto e atualiza o progresso', async ({ page }) => {
+  await page.goto('/')
+  await page.getByTestId('arquivo').setInputFiles({ name: 'l.md', mimeType: 'text/markdown', buffer: Buffer.from(`# Longo\n\n${paragrafos}`) })
+  await page.locator('.cartao').first().click()
+  const dir = page.getByTestId('pagina-dir')
+  await expect(dir).toContainText('Longo')
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight')
+  const antes = await dir.innerText()
+  expect(antes).not.toContain('Longo')
+
+  await page.getByText('← Biblioteca').click() // garante as gravações pendentes antes de recarregar
+  await expect(page.locator('.cartao p').nth(1)).not.toHaveText('0%')
+  await page.reload()
+  await expect(page.locator('.cartao p').nth(1)).not.toHaveText('0%')
+  await page.locator('.cartao').first().click()
+  await expect.poll(() => dir.innerText()).toBe(antes)
+})

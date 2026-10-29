@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Livro } from '../library/storage'
-import { pares, paginate, parseBlocos, type Bloco, type Pagina } from '../reader/paginate'
+import { saveBook } from '../library/storage'
+import { pares, paginate, parseBlocos, parDaPosicao, posicaoDoPar, type Bloco, type Pagina } from '../reader/paginate'
 
 const LARGURA_MIN = 700
 const LINHA = 28 // px, igual ao line-height do CSS
@@ -54,11 +55,18 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
     const paginas = paginate(blocos, Math.max(3, Math.floor(area.h / LINHA)), Math.max(10, Math.floor(area.w / CHAR)))
     return pares(paginas)
   }, [blocos, area])
-  // índice do Par atual; a posição de leitura (task 7) substitui este estado
-  const [idx, setIdx] = useState(0)
-  const atual = Math.min(idx, Math.max(0, todos.length - 1))
+  // Posição de leitura: deslocamento no texto-fonte, estável entre repaginações
+  const [pos, setPos] = useState(livro.posicao ?? 0)
+  const atual = parDaPosicao(todos, pos)
   const par = todos[atual] ?? null
-  const virar = (d: number) => setIdx(Math.max(0, Math.min(todos.length - 1, atual + d)))
+  const virar = (d: number) => {
+    const novo = Math.max(0, Math.min(todos.length - 1, atual + d))
+    if (novo === atual) return
+    const p = posicaoDoPar(todos, novo)
+    setPos(p)
+    const progresso = novo === todos.length - 1 ? 100 : Math.floor((p / Math.max(1, livro.texto.length)) * 100)
+    void saveBook({ ...livro, posicao: p, progresso })
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
