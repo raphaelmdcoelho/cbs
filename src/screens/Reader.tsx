@@ -49,17 +49,34 @@ export function Reader({ livro, onVoltar }: { livro: Livro; onVoltar: () => void
   }, [estreita])
 
   const blocos = useMemo(() => parseBlocos(livro.texto), [livro.texto])
-  const par = useMemo(() => {
-    if (!area) return null
+  const todos = useMemo(() => {
+    if (!area) return []
     const paginas = paginate(blocos, Math.max(3, Math.floor(area.h / LINHA)), Math.max(10, Math.floor(area.w / CHAR)))
-    return pares(paginas)[0]
+    return pares(paginas)
   }, [blocos, area])
+  // índice do Par atual; a posição de leitura (task 7) substitui este estado
+  const [idx, setIdx] = useState(0)
+  const atual = Math.min(idx, Math.max(0, todos.length - 1))
+  const par = todos[atual] ?? null
+  const virar = (d: number) => setIdx(Math.max(0, Math.min(todos.length - 1, atual + d)))
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') virar(1)
+      else if (e.key === 'ArrowLeft') virar(-1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   return (
     <main className="leitor">
       <header><button onClick={onVoltar}>← Biblioteca</button><span>{livro.titulo}</span></header>
       {estreita ? <p role="alert">Tela estreita demais</p> : (
-        <div className="livro" data-testid="livro">
+        <div className="livro" data-testid="livro" onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          virar(e.clientX < r.left + r.width / 2 ? -1 : 1)
+        }}>
           <div className="pagina esq" data-testid="pagina-esq">{par?.[0] && <Conteudo pagina={par[0]} />}</div>
           <div className="pagina dir" data-testid="pagina-dir">{par?.[1] && <Conteudo pagina={par[1]} />}</div>
           <div className="medida" ref={medida} aria-hidden />
