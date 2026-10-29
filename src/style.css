@@ -1,0 +1,8 @@
+body { margin: 0; background: #faf7f0; color: #222; font-family: Georgia, 'Times New Roman', serif; }
+main { max-width: 960px; margin: 0 auto; padding: 24px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+button { font: inherit; padding: 8px 16px; cursor: pointer; }
+ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, 180px); gap: 24px; }
+.cartao h2 { font-size: 1rem; margin: 8px 0 0; }
+.cartao p { margin: 2px 0; color: #555; }
+.capa { height: 240px; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; color: #fff; text-align: center; font-size: 1.2rem; border-radius: 4px; }
